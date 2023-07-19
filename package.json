@@ -17,6 +17,7 @@
     "axios": "^1.4.0",
     "eslint": "8.45.0",
     "eslint-config-next": "13.4.10",
+    "jssoup": "^0.0.15",
     "langchain": "^0.0.112",
     "next": "13.4.10",
     "openai-edge": "^1.2.0",
