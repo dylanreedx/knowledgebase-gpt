@@ -3,9 +3,11 @@ import fs from 'fs';
 import ytdl from 'ytdl-core';
 import path from 'path';
 import {supabaseClient} from '@/utils/supabase';
+import {NextResponse} from 'next/server';
 
 export async function POST(req: Request) {
   const {video, token} = await req.json();
+  let videoId = '';
 
   async function uploadFile(filePath: string) {
     const supabase = await supabaseClient(token);
@@ -19,10 +21,10 @@ export async function POST(req: Request) {
 
   ytdl.getInfo(video).then((info) => {
     const format = ytdl.chooseFormat(info.formats, {quality: 'highestaudio'});
-    console.log('info', info);
     const start = Date.now();
 
-    const outputDir = `chunks/${info.videoDetails.videoId}`;
+    videoId = info.videoDetails.videoId;
+    const outputDir = `chunks/${videoId}`;
     fs.mkdirSync(outputDir, {recursive: true}); // create the directory if it doesn't exist
 
     const ffmpegProcess = cp.spawn(
@@ -78,8 +80,5 @@ export async function POST(req: Request) {
       .pipe(ffmpegProcess.stdio[3] as any);
   });
 
-  return {
-    status: 200,
-    body: {message: 'ok'},
-  };
+  NextResponse.json({message: 'done', videoId});
 }

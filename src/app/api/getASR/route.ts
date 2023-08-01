@@ -1,19 +1,35 @@
 import {HfInference} from '@huggingface/inference';
-import {readFileSync, writeFileSync, readdirSync} from 'fs';
+import {createWriteStream} from 'fs';
+import {supabaseClient} from '@/utils/supabase';
 import {NextResponse} from 'next/server';
-import path from 'path';
 
 const Hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 
-export async function POST() {
-  // get audio from video
-  const chunksDir = path.join('chunks');
-  const files = readdirSync(chunksDir).sort(); // sort files by name
+export async function POST(req: Request) {
+  const {videoId, token} = await req.json();
+  const supabase = await supabaseClient(token);
+  console.log('videoId', videoId);
+
+  // get list of files in the videoId folder
+  const {data: list, error: listError} = await supabase.storage
+    .from('chunks')
+    .list(`chunks/${videoId}`);
+
+  if (listError) throw listError;
 
   let fullTranscription = '';
 
-  for (const file of files) {
-    const arrayBuffer = getAudioBuffer(path.join(chunksDir, file));
+  for (const file of list) {
+    // download the file
+    const {data: downloadData, error: downloadError} = await supabase.storage
+      .from('chunks')
+      .download(`chunks/${videoId}/${file.name}`);
+
+    if (downloadError) throw downloadError;
+
+    // convert Blob to ArrayBuffer
+    const arrayBuffer = await downloadData.arrayBuffer();
+
     try {
       const text = await Hf.automaticSpeechRecognition({
         model: 'jonatasgrosman/wav2vec2-large-xlsr-53-english',
@@ -27,15 +43,13 @@ export async function POST() {
     }
   }
 
-  // write full transcription to a text file
-  writeFileSync('transcription.txt', fullTranscription);
+  // upload full transcription to Supabase
+  const {error: uploadError} = await supabase.storage
+    .from('transcriptions')
+    .upload(`${videoId}/transcription.txt`, new Blob([fullTranscription]));
+
+  if (uploadError) throw uploadError;
 
   // send message when done
-  NextResponse.json({message: 'done'});
-}
-
-function getAudioBuffer(filePath: string) {
-  const buffer = readFileSync(filePath);
-  const arrayBuffer = Uint8Array.from(buffer).buffer;
-  return arrayBuffer;
+  return NextResponse.json({message: 'done'});
 }
