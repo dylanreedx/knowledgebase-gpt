@@ -14,6 +14,14 @@ export async function POST() {
   // read the transcription file
   const fullTranscription = fs.readFileSync('transcription.txt', 'utf-8');
 
+  // split the transcription into chunks of 10000 characters
+  const textSplitter = new RecursiveCharacterTextSplitter({
+    separators: ['\n\n', '\n'],
+    chunkSize: 10000,
+    chunkOverlap: 500,
+  });
+  const docs = await textSplitter.createDocuments([fullTranscription]);
+
   // define the summarization prompt
   const summarizationPromptTemplate = new PromptTemplate({
     template:
@@ -27,20 +35,17 @@ export async function POST() {
     prompt: summarizationPromptTemplate,
   });
 
-  // run the summarization chain and combine the summaries
-  try {
-    console.log('Summarizing...');
-    if (!fullTranscription)
-      throw new Error('No transcription found' + fullTranscription);
-    const summary = await summaryChain.run(fullTranscription);
+  console.log('Summarizing...');
 
-    console.log('summary', summary);
-    const combinedSummary = summary;
-    console.log(combinedSummary);
-
-    // write the combined summary to a text file
-    fs.writeFileSync('summary.txt', combinedSummary);
-  } catch (error) {
-    console.log(error);
+  // run the summarization chain for each chunk and combine the summaries
+  let combinedSummary = '';
+  for (const doc of docs) {
+    const summary = await summaryChain.run(doc.pageContent);
+    combinedSummary += summary + '\n';
   }
+
+  console.log(combinedSummary);
+
+  // write the combined summary to a text file
+  fs.writeFileSync('summary.txt', combinedSummary);
 }

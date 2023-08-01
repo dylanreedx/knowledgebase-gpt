@@ -1,5 +1,6 @@
 import {HfInference} from '@huggingface/inference';
 import {readFileSync, writeFileSync, readdirSync} from 'fs';
+import {NextResponse} from 'next/server';
 import path from 'path';
 
 const Hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
@@ -20,6 +21,7 @@ export async function POST() {
       });
 
       fullTranscription += text.text + '\n';
+      console.log('Transcription: ', text.text);
     } catch (error) {
       console.log(error);
     }
@@ -27,6 +29,9 @@ export async function POST() {
 
   // write full transcription to a text file
   writeFileSync('transcription.txt', fullTranscription);
+
+  // send message when done
+  NextResponse.json({message: 'done'});
 }
 
 function getAudioBuffer(filePath: string) {
