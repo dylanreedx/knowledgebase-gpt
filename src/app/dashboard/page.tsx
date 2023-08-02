@@ -7,7 +7,7 @@ import Hydrate from '@/components/hydrate-client';
 import {useQuery} from '@tanstack/react-query';
 import {Skeleton} from '@/components/ui/skeleton';
 import {Button} from '@/components/ui/button';
-import Link from 'next/link';
+import {useRouter} from 'next/navigation';
 
 async function getAudioFromVideo(
   videoUrl: string,
@@ -40,7 +40,25 @@ async function getUserVideos(token: string, userId: string) {
 
 export default function Dashboard() {
   const {user} = useUser();
+  const router = useRouter();
   const {getToken} = useAuth();
+
+  const startASRAndNavigate = async (videoId: string) => {
+    const token = await getToken({template: 'supabase'});
+    if (!user) {
+      return;
+    }
+
+    // Start the ASR process
+    axios.post('/api/getASR', {
+      videoId: videoId,
+      token: token as string,
+      userId: user.id,
+    });
+
+    // Navigate to the video page
+    router.push(`/dashboard/${videoId}`);
+  };
 
   const queryClient = getQueryClient();
 
@@ -111,8 +129,13 @@ export default function Dashboard() {
                     title='YouTube video player'
                     allow='accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
                   ></iframe>
-                  <Button className='w-full'>
-                    <Link href={`/dashboard/${video.videoId}`}>Summarize</Link>
+                  <Button
+                    className='w-full'
+                    onClick={() => {
+                      startASRAndNavigate(video.videoId);
+                    }}
+                  >
+                    Learn Faster
                   </Button>
                 </li>
               ))}
