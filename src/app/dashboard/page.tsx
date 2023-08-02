@@ -9,11 +9,18 @@ export default function Dashboard() {
 
   const uploadAudio = async (videoUrl: string) => {
     const token = await getToken({template: 'supabase'});
-
-    await axios.post('/api/video', {
-      video: videoUrl,
-      token: token,
-    });
+    if (!user) {
+      return;
+    }
+    try {
+      await axios.post('/api/video', {
+        video: videoUrl,
+        token: token,
+        userId: user.id,
+      });
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   useEffect(() => {
@@ -22,6 +29,9 @@ export default function Dashboard() {
       console.log(videoUrl);
       if (videoUrl) {
         uploadAudio(videoUrl);
+
+        // Remove the video URL from the user's session or from a cookie
+        // window.sessionStorage.removeItem('videoUrl');
       }
     }
   }, [user]);
