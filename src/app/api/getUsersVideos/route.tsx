@@ -6,8 +6,16 @@ export async function POST(req: Request) {
   const supabase = await supabaseClient(token);
 
   const {data, error} = await supabase
-    .from('videos')
-    .select('videoId, has_transcript, has_summary')
+    .from('user_videos')
+    .select(
+      `
+    videos (
+      videoId,
+      has_transcript,
+      has_summary
+    )
+  `
+    )
     .eq('userId', userId);
 
   if (error) {
@@ -17,5 +25,9 @@ export async function POST(req: Request) {
     });
   }
 
-  return NextResponse.json({videos: data});
+  const videos = data.map((video) => {
+    return video.videos;
+  });
+
+  return NextResponse.json({videos});
 }

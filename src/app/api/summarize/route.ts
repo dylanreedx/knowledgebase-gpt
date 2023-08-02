@@ -46,7 +46,7 @@ export async function POST(req: Request) {
       // define the summarization prompt
       const summarizationPromptTemplate = new PromptTemplate({
         template:
-          'Read the following text and provide a brief summary:\n"{content}"\nSUMMARY:',
+          'Read the following text and provide a brief summary with the biggest key points which could be elaborated on further:\n"{content}"\nSUMMARY:',
         inputVariables: ['content'],
       });
 
