@@ -6,7 +6,7 @@ import {supabaseClient} from '@/utils/supabase';
 import {NextResponse} from 'next/server';
 
 export async function POST(req: Request) {
-  const {video, token, userId} = await req.json();
+  const {video, token, userId, userEmail} = await req.json();
   const supabase = await supabaseClient(token);
   let videoId = '';
 
@@ -92,6 +92,7 @@ export async function POST(req: Request) {
             .insert([
               {
                 userId: userId,
+                email: userEmail,
                 // add other user fields here
               },
             ]);

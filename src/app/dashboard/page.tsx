@@ -12,13 +12,15 @@ import {useRouter} from 'next/navigation';
 async function getAudioFromVideo(
   videoUrl: string,
   token: string,
-  userId: string
+  userId: string,
+  userEmail: string
 ) {
   try {
     const {data} = await axios.post('/api/video', {
       video: videoUrl,
       token: token,
       userId: userId,
+      userEmail: userEmail,
     });
     return data;
   } catch (error) {
@@ -88,7 +90,12 @@ export default function Dashboard() {
       return;
     }
 
-    await getAudioFromVideo(videoUrl, token as string, user.id);
+    await getAudioFromVideo(
+      videoUrl,
+      token as string,
+      user.id,
+      user.emailAddresses[0].emailAddress
+    );
   };
 
   useEffect(() => {
