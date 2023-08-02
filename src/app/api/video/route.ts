@@ -8,6 +8,10 @@ import {NextResponse} from 'next/server';
 export async function POST(req: Request) {
   const {video, token, userId, userEmail} = await req.json();
   const supabase = await supabaseClient(token);
+  if (!token) {
+    console.error('Token is undefined');
+    return NextResponse.json({message: 'Token is undefined'});
+  }
   let videoId = '';
 
   async function uploadFile(filePath: string) {
