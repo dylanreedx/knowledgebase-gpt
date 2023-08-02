@@ -78,6 +78,8 @@ export async function POST(req: Request) {
     ytdl
       .downloadFromInfo(info, {format: format})
       .pipe(ffmpegProcess.stdio[3] as any);
+
+    NextResponse.json({message: 'done', videoId});
   });
 
   NextResponse.json({message: 'done', videoId});
