@@ -7,7 +7,7 @@ export async function POST(req: Request) {
 
   const {data, error} = await supabase
     .from('videos')
-    .select('videoId')
+    .select('videoId, has_transcript, has_summary')
     .eq('userId', userId);
 
   if (error) {

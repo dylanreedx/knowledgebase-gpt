@@ -48,18 +48,25 @@ export default function Dashboard() {
   const router = useRouter();
   const {getToken} = useAuth();
 
-  const startASRAndNavigate = async (videoId: string) => {
+  const startASRAndNavigate = async (
+    videoId: string,
+    hasTranscript: boolean
+  ) => {
     const token = await getToken({template: 'supabase'});
     if (!user) {
       return;
     }
 
-    // Start the ASR process
-    axios.post('/api/getASR', {
-      videoId: videoId,
-      token: token as string,
-      userId: user.id,
-    });
+    console.log(hasTranscript);
+
+    // Start the ASR process only if the video hasn't been transcribed yet
+    if (!hasTranscript) {
+      axios.post('/api/getASR', {
+        videoId: videoId,
+        token: token as string,
+        userId: user.id,
+      });
+    }
 
     // Navigate to the video page
     router.push(`/dashboard/${videoId}`);
@@ -150,24 +157,29 @@ export default function Dashboard() {
             <p>no vidoes</p>
           ) : (
             <ul className='grid grid-cols-3 gap-2'>
-              {videos?.videos.map((video: {videoId: string}) => (
-                <li key={video.videoId} className='space-y-2'>
-                  <iframe
-                    className='w-full'
-                    src={`https://www.youtube.com/embed/${video.videoId}?controls=0`}
-                    title='YouTube video player'
-                    allow='accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
-                  ></iframe>
-                  <Button
-                    className='w-full'
-                    onClick={() => {
-                      startASRAndNavigate(video.videoId);
-                    }}
-                  >
-                    Learn Faster
-                  </Button>
-                </li>
-              ))}
+              {videos?.videos.map(
+                (video: {videoId: string; has_transcript: boolean}) => (
+                  <li key={video.videoId} className='space-y-2'>
+                    <iframe
+                      className='w-full'
+                      src={`https://www.youtube.com/embed/${video.videoId}?controls=0`}
+                      title='YouTube video player'
+                      allow='accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
+                    ></iframe>
+                    <Button
+                      className='w-full'
+                      onClick={() => {
+                        startASRAndNavigate(
+                          video.videoId,
+                          video.has_transcript
+                        );
+                      }}
+                    >
+                      Learn Faster
+                    </Button>
+                  </li>
+                )
+              )}
             </ul>
           )}
         </section>
