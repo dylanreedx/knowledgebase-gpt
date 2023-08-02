@@ -7,7 +7,7 @@ import Providers from './providers';
 const inter = Inter({subsets: ['latin']});
 
 export const metadata: Metadata = {
-  title: "Keen | Learn video's information faster.",
+  title: "Piqd | Learn video's information faster.",
   description:
     'YouTube is the best way to learn in 2023. Learn skills, information, and more from YouTube videos faster.',
 };
