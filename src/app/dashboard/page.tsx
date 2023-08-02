@@ -1,5 +1,5 @@
 'use client';
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {useAuth, useUser} from '@clerk/nextjs';
 import axios from 'axios';
 import getQueryClient from '@/utils/get-query-client';
@@ -8,6 +8,8 @@ import {useQuery} from '@tanstack/react-query';
 import {Skeleton} from '@/components/ui/skeleton';
 import {Button} from '@/components/ui/button';
 import {useRouter} from 'next/navigation';
+import Link from 'next/link';
+import {Input} from '@/components/ui/input';
 
 async function getAudioFromVideo(
   videoUrl: string,
@@ -41,6 +43,7 @@ async function getUserVideos(token: string, userId: string) {
 }
 
 export default function Dashboard() {
+  const [url, setUrl] = useState('');
   const {user} = useUser();
   const router = useRouter();
   const {getToken} = useAuth();
@@ -113,7 +116,26 @@ export default function Dashboard() {
   return (
     <Hydrate>
       <main className='max-w-3xl mx-auto'>
-        <h1>Dashboard</h1>
+        <header className='py-6'>
+          <h1>Dashboard</h1>
+          <div className='flex items-center space-x-2'>
+            <Input
+              placeholder='https://www.youtube.com/watch?v=TGGwCG6AFz4'
+              onChange={(e) => setUrl(e.target.value)}
+              value={url}
+            />
+            <Button
+              className='whitespace-nowrap'
+              disabled={url.length < 5}
+              onClick={() => {
+                uploadAudio(url);
+                setUrl('');
+              }}
+            >
+              Upload video
+            </Button>
+          </div>
+        </header>
 
         <section>
           {isLoading ? (
@@ -127,7 +149,7 @@ export default function Dashboard() {
           ) : videos?.length > 0 ? (
             <p>no vidoes</p>
           ) : (
-            <ul className='grid grid-cols-3'>
+            <ul className='grid grid-cols-3 gap-2'>
               {videos?.videos.map((video: {videoId: string}) => (
                 <li key={video.videoId} className='space-y-2'>
                   <iframe

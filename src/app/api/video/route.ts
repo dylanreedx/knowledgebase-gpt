@@ -101,16 +101,49 @@ export async function POST(req: Request) {
         }
 
         // Associate the video with the user
-        const {data, error: insertError} = await supabase
+        const {data: existingVideo, error: videoError} = await supabase
           .from('videos')
-          .insert([
-            {
-              videoId: videoId,
-              userId: userId, // replace with the user's id
-            },
-          ]);
+          .select('videoId')
+          .eq('videoId', videoId);
 
-        if (insertError) throw insertError;
+        if (videoError) throw videoError;
+
+        // If the video doesn't exist, insert a new video
+        if (!existingVideo.length) {
+          const {data: newVideo, error: insertError} = await supabase
+            .from('videos')
+            .insert([
+              {
+                videoId: videoId,
+                // add other video fields here
+              },
+            ]);
+
+          if (insertError) throw insertError;
+        }
+
+        const {data: existingAssociation, error: associationError} =
+          await supabase
+            .from('user_videos')
+            .select('*')
+            .eq('videoId', videoId)
+            .eq('userId', userId);
+
+        if (associationError) throw associationError;
+
+        // If the association doesn't exist, create a new one
+        if (!existingAssociation.length) {
+          const {data, error: insertError} = await supabase
+            .from('user_videos')
+            .insert([
+              {
+                videoId: videoId,
+                userId: userId, // replace with the user's id
+              },
+            ]);
+
+          if (insertError) throw insertError;
+        }
       });
 
       ytdl
