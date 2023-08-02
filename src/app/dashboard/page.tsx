@@ -53,6 +53,10 @@ export default function Dashboard() {
     hasTranscript: boolean
   ) => {
     const token = await getToken({template: 'supabase'});
+    if (!token) {
+      console.error('No token found');
+      return;
+    }
     if (!user) {
       return;
     }
@@ -96,13 +100,17 @@ export default function Dashboard() {
 
   const uploadAudio = async (videoUrl: string) => {
     const token = await getToken({template: 'supabase'});
+    if (!token) {
+      console.error('No token found');
+      return;
+    }
     if (!user) {
       return;
     }
 
     await getAudioFromVideo(
       videoUrl,
-      token as string,
+      token,
       user.id,
       user.emailAddresses[0].emailAddress
     );
