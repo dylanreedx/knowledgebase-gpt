@@ -14,12 +14,10 @@ export default function Chat() {
   return (
     <main className='max-w-3xl mx-auto'>
       <header className='flex justify-between items-center py-6'>
-        {!isSignedIn ? (
-          <Link href='/sign-up'>
-            <Button>Sign In</Button>
+        {isSignedIn && (
+          <Link href='/dashboard'>
+            <Button>Go to Dashboard</Button>
           </Link>
-        ) : (
-          <SignOutButton />
         )}
       </header>
 
