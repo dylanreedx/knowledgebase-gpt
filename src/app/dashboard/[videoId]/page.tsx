@@ -5,10 +5,13 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
 import {Button} from '@/components/ui/button';
 import {supabaseClient} from '@/utils/supabase';
 import {useAuth} from '@clerk/nextjs';
 import axios from 'axios';
+import {ChevronLeft} from 'lucide-react';
+import Link from 'next/link';
 import {useEffect, useState} from 'react';
 
 export default function VideoPage({params}: {params: {videoId: string}}) {
@@ -62,8 +65,13 @@ export default function VideoPage({params}: {params: {videoId: string}}) {
 
   return (
     <main className='max-w-3xl mx-auto space-y-20'>
-      <header className='h-[25vh]'>
-        <h2>{params.videoId}</h2>
+      <header className='h-[25vh] pt-4 space-y-4'>
+        <Button>
+          <Link href='/dashboard' className='flex items-center'>
+            <ChevronLeft className='w-6 h-6' />
+            Back
+          </Link>
+        </Button>
         <iframe
           className='w-full h-full'
           src={`https://www.youtube.com/embed/${params.videoId}?controls=0`}
@@ -72,8 +80,14 @@ export default function VideoPage({params}: {params: {videoId: string}}) {
         ></iframe>
       </header>
       {transcription ? (
-        <section>
-          {summary && <p>{summary}</p>}
+        <section className='space-y-2'>
+          {summary ? (
+            <p>{summary}</p>
+          ) : (
+            <p className='py-4 text-primary/75'>
+              You can now summarize the whole video with it&apos;s transcript.
+            </p>
+          )}
           <Button
             className='w-full'
             onClick={async () => {
@@ -94,7 +108,17 @@ export default function VideoPage({params}: {params: {videoId: string}}) {
           </Accordion>
         </section>
       ) : (
-        'Waiting for transcription...'
+        <Alert className='my-4 flex items-center gap-4'>
+          <div className='loader ease-linear rounded-full border-2 border-t-2 border-slate-800 h-12 w-12'></div>
+          <div className=''>
+            <AlertTitle>
+              Letting the AI take a listen to the video...
+            </AlertTitle>
+            <AlertDescription>
+              This may take a few minutes, get some coffee ☕️
+            </AlertDescription>
+          </div>
+        </Alert>
       )}
     </main>
   );

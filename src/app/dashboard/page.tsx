@@ -1,15 +1,17 @@
 'use client';
 import {useEffect, useState} from 'react';
-import {useAuth, useUser} from '@clerk/nextjs';
+import {SignOutButton, useAuth, useUser} from '@clerk/nextjs';
 import axios from 'axios';
 import getQueryClient from '@/utils/get-query-client';
 import Hydrate from '@/components/hydrate-client';
-import {useQuery} from '@tanstack/react-query';
+import {useMutation, useQuery} from '@tanstack/react-query';
 import {Skeleton} from '@/components/ui/skeleton';
 import {Button} from '@/components/ui/button';
 import {useRouter} from 'next/navigation';
 import Link from 'next/link';
 import {Input} from '@/components/ui/input';
+import {Card, CardContent, CardFooter} from '@/components/ui/card';
+import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
 
 async function getAudioFromVideo(
   videoUrl: string,
@@ -43,10 +45,15 @@ async function getUserVideos(token: string, userId: string) {
 }
 
 export default function Dashboard() {
+  const [isLoadingVideo, setIsLoadingVideo] = useState(false);
+  const [videoCount, setVideoCount] = useState(0);
+
   const [url, setUrl] = useState('');
   const {user} = useUser();
   const router = useRouter();
   const {getToken} = useAuth();
+
+  const queryClient = getQueryClient();
 
   const startASRAndNavigate = async (
     videoId: string,
@@ -76,7 +83,31 @@ export default function Dashboard() {
     router.push(`/dashboard/${videoId}`);
   };
 
-  const queryClient = getQueryClient();
+  const uploadAudio = async (videoUrl: string) => {
+    setIsLoadingVideo(true); // Set loading to true when video upload starts
+    const token = await getToken({template: 'supabase'});
+    if (!token) {
+      console.error('No token found');
+      return;
+    }
+    if (!user) {
+      return;
+    }
+
+    await getAudioFromVideo(
+      videoUrl,
+      token,
+      user.id,
+      user.emailAddresses[0].emailAddress
+    );
+  };
+
+  const mutation = useMutation(uploadAudio, {
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries(['videos']);
+    },
+  });
 
   const {
     data: videos,
@@ -96,25 +127,6 @@ export default function Dashboard() {
   if (error) {
     console.log('Error: ', error);
   }
-  console.log(videos);
-
-  const uploadAudio = async (videoUrl: string) => {
-    const token = await getToken({template: 'supabase'});
-    if (!token) {
-      console.error('No token found');
-      return;
-    }
-    if (!user) {
-      return;
-    }
-
-    await getAudioFromVideo(
-      videoUrl,
-      token,
-      user.id,
-      user.emailAddresses[0].emailAddress
-    );
-  };
 
   useEffect(() => {
     if (user) {
@@ -128,11 +140,23 @@ export default function Dashboard() {
       }
     }
   }, [user]);
+
+  useEffect(() => {
+    setVideoCount(videos?.length || 0);
+    if (videos?.length > videoCount) {
+      setIsLoadingVideo(false);
+      setVideoCount(videos.length);
+    }
+  }, [videos]);
+
   return (
     <Hydrate>
       <main className='max-w-3xl mx-auto'>
         <header className='py-6'>
-          <h1>Dashboard</h1>
+          <div>
+            <h1>Dashboard</h1>
+            <SignOutButton />
+          </div>
           <div className='flex items-center space-x-2'>
             <Input
               placeholder='https://www.youtube.com/watch?v=TGGwCG6AFz4'
@@ -143,7 +167,7 @@ export default function Dashboard() {
               className='whitespace-nowrap'
               disabled={url.length < 5}
               onClick={() => {
-                uploadAudio(url);
+                mutation.mutate(url);
                 setUrl('');
               }}
             >
@@ -152,39 +176,51 @@ export default function Dashboard() {
           </div>
         </header>
 
+        {/* banner to signal that a video is being processed */}
+        {isLoadingVideo && (
+          <Alert className='my-4 flex items-center gap-4'>
+            <div className='loader ease-linear rounded-full border-2 border-t-2 border-slate-800 h-12 w-12'></div>
+            <div className=''>
+              <AlertTitle>Chopping up the video now!</AlertTitle>
+              <AlertDescription>
+                This may take a few minutes, get some coffee ☕️
+              </AlertDescription>
+            </div>
+          </Alert>
+        )}
+
         <section>
           {isLoading ? (
-            <div className='flex items-center space-x-4'>
-              <Skeleton className='h-12 w-12 rounded-full' />
-              <div className='space-y-2'>
-                <Skeleton className='h-4 w-[250px]' />
-                <Skeleton className='h-4 w-[200px]' />
+            <Alert className='my-4 flex items-center gap-4'>
+              <div className='loader ease-linear rounded-full border-2 border-t-2 border-slate-800 h-12 w-12'></div>
+              <div className=''>
+                <AlertTitle>Let&apos;s get your videos.</AlertTitle>
+                <AlertDescription>Just a sec.</AlertDescription>
               </div>
-            </div>
+            </Alert>
           ) : videos?.length > 0 ? (
             <p>no vidoes</p>
           ) : (
             <ul className='grid grid-cols-3 gap-2'>
               {videos?.videos.map(
                 (video: {videoId: string; has_transcript: boolean}) => (
-                  <li key={video.videoId} className='space-y-2'>
-                    <iframe
-                      className='w-full'
-                      src={`https://www.youtube.com/embed/${video.videoId}?controls=0`}
-                      title='YouTube video player'
-                      allow='accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
-                    ></iframe>
-                    <Button
-                      className='w-full'
-                      onClick={() => {
-                        startASRAndNavigate(
-                          video.videoId,
-                          video.has_transcript
-                        );
-                      }}
-                    >
-                      Learn Faster
-                    </Button>
+                  <li
+                    onClick={() => {
+                      startASRAndNavigate(video.videoId, video.has_transcript);
+                    }}
+                    key={video.videoId}
+                    className='space-y-2 hover:cursor-pointer hover:scale-105 duration-200'
+                  >
+                    <Card>
+                      <CardContent className='m-auto p-6'>
+                        <iframe
+                          className='w-full pointer-events-none h-full rounded-lg'
+                          src={`https://www.youtube.com/embed/${video.videoId}?controls=0`}
+                          title='YouTube video player'
+                          allow='accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
+                        ></iframe>
+                      </CardContent>
+                    </Card>
                   </li>
                 )
               )}
