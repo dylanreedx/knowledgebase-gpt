@@ -153,7 +153,7 @@ export default function Dashboard() {
     <Hydrate>
       <main className='max-w-3xl mx-auto'>
         <header className='py-6'>
-          <div>
+          <div className='flex items-center justify-between pb-4'>
             <h1>Dashboard</h1>
             <SignOutButton />
           </div>
