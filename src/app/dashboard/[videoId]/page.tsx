@@ -13,10 +13,41 @@ import axios from 'axios';
 import {ChevronLeft} from 'lucide-react';
 import Link from 'next/link';
 import {useEffect, useState} from 'react';
+import {useChat} from 'ai/react';
+import {Card, CardContent} from '@/components/ui/card';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {ScrollArea} from '@/components/ui/scroll-area';
 
 export default function VideoPage({params}: {params: {videoId: string}}) {
   const [transcription, setTranscription] = useState<string | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function chat() {
+    setMessages([...messages, {role: 'user', content: input}]);
+    if (!input) return;
+    if (messages.length < 1) return;
+    try {
+      const response = await axios.post(
+        '/api/chat',
+        {
+          messages: messages,
+          transcript: transcription,
+        },
+        {
+          responseType: 'stream', // Indicate that we expect a stream
+        }
+      );
+      console.log(response);
+      setMessages([...messages, {role: 'assistant', content: response.data}]);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   const {getToken} = useAuth();
 
   async function summarizeVideo(videoId: string) {
@@ -82,7 +113,49 @@ export default function VideoPage({params}: {params: {videoId: string}}) {
       {transcription ? (
         <section className='space-y-2'>
           {summary ? (
-            <p>{summary}</p>
+            <div className='space-y-12'>
+              <p>{summary}</p>
+              <div>
+                {messages.length > 0 && (
+                  <ScrollArea className='h-[50vh] w-full rounded-md border p-4'>
+                    {messages.map((m) => (
+                      <Card key={m.id} className='my-2'>
+                        <CardContent className='p-6'>
+                          <h3 className='text-foreground font-bold text-sm'>
+                            {m.role}
+                          </h3>
+                          <p className='text-lg'>{m.content}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </ScrollArea>
+                )}
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    chat();
+                  }}
+                >
+                  <Label>
+                    Say something...
+                    <div className='flex items-center space-x-2'>
+                      <Input
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                      />
+                      <Button
+                        onClick={() => {
+                          chat();
+                        }}
+                      >
+                        Chat
+                      </Button>
+                    </div>
+                  </Label>
+                </form>
+              </div>
+            </div>
           ) : (
             <p className='py-4 text-primary/75'>
               You can now summarize the whole video with it&apos;s transcript.
