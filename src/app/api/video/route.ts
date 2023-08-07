@@ -13,8 +13,8 @@ export async function POST(req: Request) {
       userId,
       userEmail,
     });
-    NextResponse.json(response.data);
+    return NextResponse.json(response.data);
   } catch (error) {
-    NextResponse.json({error: 'Error contacting external server'});
+    return NextResponse.json({error: 'Error contacting external server'});
   }
 }

@@ -15,8 +15,8 @@ export async function POST(req: Request) {
       videoId,
       token,
     });
-    NextResponse.json(response.data);
+    return NextResponse.json(response.data);
   } catch (error) {
-    NextResponse.json({error: 'Error contacting external server'});
+    return NextResponse.json({error: 'Error contacting external server'});
   }
 }

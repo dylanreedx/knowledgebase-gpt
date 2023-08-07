@@ -57,6 +57,7 @@ export default function VideoPage({params}: {params: {videoId: string}}) {
         videoId: videoId,
         token: token,
       });
+      console.log(data);
       return data;
     } catch (error) {
       console.log(error);
@@ -104,7 +105,7 @@ export default function VideoPage({params}: {params: {videoId: string}}) {
           </Link>
         </Button>
         <iframe
-          className='w-full h-full'
+          className='w-full h-full rounded-xl'
           src={`https://www.youtube.com/embed/${params.videoId}?controls=0`}
           title='YouTube video player'
           allow='accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
