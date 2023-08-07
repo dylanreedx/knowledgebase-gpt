@@ -24,7 +24,7 @@ export default function VideoPage({params}: {params: {videoId: string}}) {
   const [summary, setSummary] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSummaryLoading, setIsSummaryLoading] = useState(false);
 
   async function chat() {
     setMessages([...messages, {role: 'user', content: input}]);
@@ -52,12 +52,15 @@ export default function VideoPage({params}: {params: {videoId: string}}) {
 
   async function summarizeVideo(videoId: string) {
     const token = await getToken({template: 'supabase'});
+    setIsSummaryLoading(true);
     try {
       const {data} = await axios.post('/api/summarize', {
         videoId: videoId,
         token: token,
       });
-      console.log(data);
+
+      setSummary(data.summary);
+      setIsSummaryLoading(false);
       return data;
     } catch (error) {
       console.log(error);
@@ -163,14 +166,20 @@ export default function VideoPage({params}: {params: {videoId: string}}) {
             </p>
           )}
           <Button
+            disabled={isSummaryLoading}
             className='w-full'
             onClick={async () => {
-              const summary = await summarizeVideo(params.videoId);
-              console.log(summary);
-              setSummary(summary.summary);
+              await summarizeVideo(params.videoId);
             }}
           >
-            Summarize
+            {isSummaryLoading ? (
+              <div className='flex items-center gap-4'>
+                <div className='loader ease-linear rounded-full border-2 border-t-2 border-gray-200 h-6 w-6'></div>
+                <span className='text-gray-400'>Summarizing...</span>
+              </div>
+            ) : (
+              'Summarize'
+            )}
           </Button>
           <Accordion type='single' collapsible className='w-full'>
             <AccordionItem value='item-1'>
