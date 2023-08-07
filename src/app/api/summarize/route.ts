@@ -8,7 +8,7 @@ import {NextResponse} from 'next/server';
 const openai = new OpenAI({
   openAIApiKey: process.env.OPENAI_API_KEY,
   modelName: 'gpt-3.5-turbo-16k-0613',
-  maxTokens: 100,
+  maxTokens: 500,
 });
 
 export async function POST(req: Request) {
